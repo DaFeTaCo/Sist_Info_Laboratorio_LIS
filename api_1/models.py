@@ -12,6 +12,7 @@ class Paciente(models.Model):
 
     documento = models.CharField(max_length=50)
     nombre = models.CharField(max_length=100)
+    apellido = models.CharField(max_length=100)
     codigo_ingreso = models.CharField(max_length=150, null=True, blank=True)
     direccion = models.CharField(max_length=150, null=True, blank=True)
     telefono = models.CharField(max_length=50, null=True, blank=True)
