@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'api_1'
+    'api_1',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -48,6 +49,12 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+]
+
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
 ]
 
 ROOT_URLCONF = 'LIS_API.urls'
@@ -79,7 +86,7 @@ DATABASES = {
         "HOST" : "127.0.0.1",
         "PORT" : 3306,
         "USER" : "root",
-        "PASSWORD" : "",
+        "PASSWORD" : "@tene@2025",
         "NAME": "sist_lab",
     }
 }
