@@ -124,7 +124,7 @@ const crearPaciente = async () => {
   }
 }
 
-// 🔹 Editar paciente (aquí puedes abrir modal o redirigir)
+// 🔹 Editar paciente 
 const editarPaciente = (paciente) => {
   alert(`Editar paciente ID: ${paciente.id}`)
   // Aquí luego puedes abrir un formulario o redirigir a /editar/:id
@@ -157,6 +157,8 @@ onMounted(cargarPacientes)
 .main-content {
   flex-grow: 1;
   padding: 30px;
+  max-width: 1400px; 
+  margin: 0 auto;
 }
 
 /* Header */
@@ -195,6 +197,8 @@ onMounted(cargarPacientes)
   padding: 25px;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  max-width: 1300px; /* Ajuste del ancho máximo  */
+  margin: 2 auto;
 }
 
 table {
@@ -210,6 +214,7 @@ thead {
 th, td {
   padding: 10px;
   border-bottom: 1px solid #ddd;
+  color: #000;
 }
 
 tr:hover {
