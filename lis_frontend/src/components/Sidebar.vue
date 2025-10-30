@@ -4,6 +4,7 @@
     <nav>
       <router-link to="/inicio" class="sidebar-link" exact>Inicio</router-link>
       <router-link to="/pacientes" class="sidebar-link">Pacientes</router-link>
+      <router-link to="/resultados" class="sidebar-link">Resultados</router-link>
       <!-- puedes seguir agregando más -->
     </nav>
   </div>
