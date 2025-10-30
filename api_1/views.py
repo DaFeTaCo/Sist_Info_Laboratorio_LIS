@@ -18,6 +18,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 # Asegúrate de que tu modelo se llama Paciente y tiene estos campos
 from .models import Paciente 
+from .models import Resultado
 
 
 class PacienteView(View):
@@ -107,3 +108,53 @@ class PacienteView(View):
         else:
             datos = {"Message" : "Patient not found..."}
         return JsonResponse(datos)
+
+
+class ResultadoView(View):
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+    # --- GET Method ---
+    def get(self, request, id=0):
+        if id > 0:
+            resultados = list(Resultado.objects.filter(id=id).values())
+            if resultados:
+                return JsonResponse({"Message": "Success", "resultado": resultados[0]})
+            else:
+                return JsonResponse({"Message": "Resultado no encontrado..."})
+        else:
+            resultados = list(Resultado.objects.values())
+            if resultados:
+                return JsonResponse({"Message": "Success", "resultados": resultados})
+            else:
+                return JsonResponse({"Message": "Resultados no encontrados..."})
+
+    # --- POST Method ---
+    def post(self, request):
+        try:
+            JsonData = json.loads(request.body)
+            Resultado.objects.create(
+                codigo_ingreso=JsonData["codigo_ingreso"],
+                colesterol_total=JsonData["colesterol_total"],
+                colesterol_hdl=JsonData["colesterol_hdl"],
+                colesterol_ldl=JsonData["colesterol_ldl"],
+                trigliceridos=JsonData["trigliceridos"],
+                laboratorista=JsonData["laboratorista"]
+            )
+            return JsonResponse({"Message": "Success: Resultado creado"})
+        except Exception as e:
+            return JsonResponse({"Message": f"Error al crear: {str(e)}"})
+
+    # --- DELETE Method ---
+    def delete(self, request, id):
+        try:
+            resultado = Resultado.objects.get(id=id)
+            resultado.delete()
+            return JsonResponse({"Message": "Success: Resultado eliminado"})
+        except Resultado.DoesNotExist:
+            return JsonResponse({"Message": "Resultado no encontrado..."})
+        except Exception as e:
+            return JsonResponse({"Message": f"Error al eliminar: {str(e)}"})
+
