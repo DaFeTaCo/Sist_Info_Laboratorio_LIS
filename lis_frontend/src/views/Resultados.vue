@@ -25,31 +25,73 @@
             <tr>
               <th>ID</th>
               <th>Código Ingreso</th>
+              <th>Nombre</th>
               <th>Colesterol Total</th>
               <th>Colesterol HDL</th>
               <th>Colesterol LDL</th>
               <th>Triglicéridos</th>
+              <th>Laboratorista</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="r in resultadosFiltrados" :key="r.id">
-              <td>{{ r.id }}</td>
-              <td>{{ r.codigo_ingreso }}</td>
-              <td>{{ r.colesterol_total }}</td>
-              <td>{{ r.colesterol_hdl }}</td>
-              <td>{{ r.colesterol_ldl }}</td>
-              <td>{{ r.trigliceridos }}</td>
-              <td>
-                <button class="btn btn-edit" @click="editarResultado(r)">Editar</button>
-                <button class="btn btn-delete" @click="eliminarResultado(r.id)">Eliminar</button>
-              </td>
+              <template v-if="resultadoEditando?.id === r.id">
+                <td>{{ r.id }}</td>
+                <td>{{ r.codigo_ingreso }}</td>
+                <td>{{ obtenerNombrePaciente(r.codigo_ingreso) }}</td>
+                <td><input type="number" v-model="resultadoEditando.colesterol_total" /></td>
+                <td><input type="number" v-model="resultadoEditando.colesterol_hdl" /></td>
+                <td><input type="number" v-model="resultadoEditando.colesterol_ldl" /></td>
+                <td><input type="number" v-model="resultadoEditando.trigliceridos" /></td>
+                <td><input v-model="resultadoEditando.laboratorista" /></td>
+                <td>
+                  <button class="btn btn-green" @click="guardarEdicion" :disabled="!formularioEdicionCompleto">Guardar</button>
+                  <button class="btn btn-delete" @click="cancelarEdicion">Cancelar</button>
+                </td>
+              </template>
+
+              <template v-else>
+                <td>{{ r.id }}</td>
+                <td>{{ r.codigo_ingreso }}</td>
+                <td>{{ obtenerNombrePaciente(r.codigo_ingreso) }}</td>
+                <td>{{ r.colesterol_total }}</td>
+                <td>{{ r.colesterol_hdl }}</td>
+                <td>{{ r.colesterol_ldl }}</td>
+                <td>{{ r.trigliceridos }}</td>
+                <td>{{ r.laboratorista }}</td>
+                <td>
+                  <button class="btn btn-edit" @click="editarResultado(r)">Editar</button>
+                  <button class="btn btn-delete" @click="eliminarResultado(r.id)">Eliminar</button>
+                </td>
+              </template>
             </tr>
           </tbody>
         </table>
         <div v-if="resultadosFiltrados.length === 0" class="no-data">
           No se encontraron resultados.
         </div>
+      </div>
+
+      <!-- Crear nuevo resultado -->
+      <div class="action-section">
+        <h3>Agregar nuevo resultado</h3>
+        <form @submit.prevent="crearResultado" class="form-inline">
+          <select v-model="nuevoResultado.codigo_ingreso" required>
+            <option disabled value="">Seleccione código ingreso</option>
+            <option v-for="p in pacientes" :key="p.id" :value="p.codigo_ingreso">
+              {{ p.codigo_ingreso }} - {{ p.nombre }} {{ p.apellido }}
+            </option>
+          </select>
+
+          <input type="number" v-model="nuevoResultado.colesterol_total" placeholder="Colesterol total" required />
+          <input type="number" v-model="nuevoResultado.colesterol_hdl" placeholder="Colesterol HDL" required />
+          <input type="number" v-model="nuevoResultado.colesterol_ldl" placeholder="Colesterol LDL" required />
+          <input type="number" v-model="nuevoResultado.trigliceridos" placeholder="Triglicéridos" required />
+          <input v-model="nuevoResultado.laboratorista" placeholder="Código laboratorista" required />
+
+          <button class="btn btn-green" type="submit" :disabled="!formularioNuevoCompleto">Agregar</button>
+        </form>
       </div>
     </main>
   </div>
@@ -60,10 +102,32 @@ import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 
 const resultados = ref([])
+const pacientes = ref([])
 const busqueda = ref('')
 const cargando = ref(true)
+const resultadoEditando = ref(null)
 
-// 🔹 Cargar lista de resultados
+const nuevoResultado = ref({
+  codigo_ingreso: '',
+  colesterol_total: '',
+  colesterol_hdl: '',
+  colesterol_ldl: '',
+  trigliceridos: '',
+  laboratorista: ''
+})
+
+// 🔹 Validación de formularios
+const formularioNuevoCompleto = computed(() => {
+  const r = nuevoResultado.value
+  return r.codigo_ingreso && r.colesterol_total && r.colesterol_hdl && r.colesterol_ldl && r.trigliceridos && r.laboratorista
+})
+
+const formularioEdicionCompleto = computed(() => {
+  const r = resultadoEditando.value
+  return r && r.colesterol_total && r.colesterol_hdl && r.colesterol_ldl && r.trigliceridos && r.laboratorista
+})
+
+// 🔹 Cargar datos
 const cargarResultados = async () => {
   try {
     const response = await axios.get('http://127.0.0.1:8000/api/resultados/')
@@ -75,7 +139,22 @@ const cargarResultados = async () => {
   }
 }
 
-// 🔹 Computed: filtro de búsqueda
+const cargarPacientes = async () => {
+  try {
+    const response = await axios.get('http://127.0.0.1:8000/api/pacientes/')
+    pacientes.value = response.data.pacientes || response.data
+  } catch (error) {
+    console.error('Error al cargar pacientes:', error)
+  }
+}
+
+// 🔹 Obtener nombre del paciente por código de ingreso
+const obtenerNombrePaciente = (codigo) => {
+  const paciente = pacientes.value.find(p => p.codigo_ingreso === codigo)
+  return paciente ? `${paciente.nombre} ${paciente.apellido}` : 'Desconocido'
+}
+
+// 🔹 Filtro de búsqueda
 const resultadosFiltrados = computed(() => {
   if (!busqueda.value) return resultados.value
   const b = busqueda.value.toLowerCase()
@@ -84,9 +163,50 @@ const resultadosFiltrados = computed(() => {
   )
 })
 
+// 🔹 Crear resultado
+const crearResultado = async () => {
+  if (!formularioNuevoCompleto.value) {
+    alert('Completa todos los campos antes de guardar.')
+    return
+  }
+  try {
+    await axios.post('http://127.0.0.1:8000/api/resultados/', nuevoResultado.value)
+    alert('Resultado agregado exitosamente')
+    Object.keys(nuevoResultado.value).forEach(k => nuevoResultado.value[k] = '')
+    await cargarResultados()
+  } catch (error) {
+    console.error('Error al crear resultado:', error)
+  }
+}
+
 // 🔹 Editar resultado
 const editarResultado = (resultado) => {
-  alert(`Editar resultado ID: ${resultado.id}`)
+  resultadoEditando.value = { ...resultado }
+}
+
+const guardarEdicion = async () => {
+  if (!formularioEdicionCompleto.value) {
+    alert('Completa todos los campos antes de guardar.')
+    return
+  }
+  try {
+    await axios.put(`http://127.0.0.1:8000/api/resultados/${resultadoEditando.value.id}/`, {
+      colesterol_total: resultadoEditando.value.colesterol_total,
+      colesterol_hdl: resultadoEditando.value.colesterol_hdl,
+      colesterol_ldl: resultadoEditando.value.colesterol_ldl,
+      trigliceridos: resultadoEditando.value.trigliceridos,
+      laboratorista: resultadoEditando.value.laboratorista
+    })
+    alert('Resultado actualizado exitosamente')
+    resultadoEditando.value = null
+    await cargarResultados()
+  } catch (error) {
+    console.error('Error al actualizar resultado:', error)
+  }
+}
+
+const cancelarEdicion = () => {
+  resultadoEditando.value = null
 }
 
 // 🔹 Eliminar resultado
@@ -102,11 +222,13 @@ const eliminarResultado = async (id) => {
   }
 }
 
-onMounted(cargarResultados)
+onMounted(() => {
+  cargarResultados()
+  cargarPacientes()
+})
 </script>
 
 <style scoped>
-/* Reutiliza el mismo estilo de Pacientes.vue */
 .dashboard-container {
   display: flex;
   min-height: 100vh;
@@ -185,3 +307,4 @@ tr:hover {
   color: #777;
 }
 </style>
+
