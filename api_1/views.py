@@ -147,6 +147,25 @@ class ResultadoView(View):
         except Exception as e:
             return JsonResponse({"Message": f"Error al crear: {str(e)}"})
 
+    # --- PUT Method ---
+    def put(self, request, id):
+        try:
+            JsonData = json.loads(request.body)
+            resultado = Resultado.objects.get(id=id)
+
+            resultado.colesterol_total = JsonData.get("colesterol_total", resultado.colesterol_total)
+            resultado.colesterol_hdl = JsonData.get("colesterol_hdl", resultado.colesterol_hdl)
+            resultado.colesterol_ldl = JsonData.get("colesterol_ldl", resultado.colesterol_ldl)
+            resultado.trigliceridos = JsonData.get("trigliceridos", resultado.trigliceridos)
+            resultado.laboratorista = JsonData.get("laboratorista", resultado.laboratorista)
+
+            resultado.save()
+            return JsonResponse({"Message": "Success: Resultado actualizado"})
+        except Resultado.DoesNotExist:
+            return JsonResponse({"Message": "Resultado no encontrado..."})
+        except Exception as e:
+            return JsonResponse({"Message": f"Error al actualizar: {str(e)}"})
+
     # --- DELETE Method ---
     def delete(self, request, id):
         try:
