@@ -62,7 +62,7 @@
                 <td>{{ r.laboratorista }}</td>
                 <td>
                   <button class="btn btn-edit" @click="editarResultado(r)">Editar</button>
-                  <button class="btn btn-delete" @click="eliminarResultado(r.id)">Eliminar</button>
+                  <button class="btn btn-delete" @click="mostrarConfirmacionModal(r.id)">Eliminar</button>
                 </td>
               </template>
             </tr>
@@ -94,6 +94,25 @@
         </form>
       </div>
     </main>
+
+    <!-- MODAL DE CONFIRMACIÓN -->
+    <div v-if="mostrarConfirmacion" class="modal-overlay" @click.self="mostrarConfirmacion = false">
+      <div class="modal-content">
+        <h3>Confirmar Eliminación</h3>
+        <p>¿Estás seguro de que deseas eliminar este resultado? Esta acción es irreversible.</p>
+        <div class="modal-actions">
+          <button class="btn btn-delete" @click="eliminarResultadoConfirmado">Eliminar</button>
+          <button class="btn btn-edit" @click="mostrarConfirmacion = false">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICACIÓN TOAST -->
+    <transition name="slide-fade">
+      <div v-if="mostrarMensaje" :class="['toast-notification', {'toast-error': isError}]">
+        {{ mensajeTexto }}
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -101,11 +120,26 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 
+// URLs base - Se elimina la barra diagonal final para evitar la doble barra en PUT/DELETE!
+const BASE_URL = 'http://127.0.0.1:8000/api'
+const RESULTADOS_API_URL = `${BASE_URL}/resultados`
+const PACIENTES_API_URL = `${BASE_URL}/pacientes`
+
+
 const resultados = ref([])
 const pacientes = ref([])
 const busqueda = ref('')
 const cargando = ref(true)
 const resultadoEditando = ref(null)
+
+// --- Estados para Notificación (Toast) ---
+const mostrarMensaje = ref(false)
+const mensajeTexto = ref('')
+const isError = ref(false)
+
+// --- Estados para Confirmación (Modal) ---
+const mostrarConfirmacion = ref(false)
+const idResultadoAEliminar = ref(null)
 
 const nuevoResultado = ref({
   codigo_ingreso: '',
@@ -116,10 +150,20 @@ const nuevoResultado = ref({
   laboratorista: ''
 })
 
+// 🔹 Función para mostrar la notificación
+const mostrarNotificacion = (mensaje, error = false) => {
+  mensajeTexto.value = mensaje
+  isError.value = error
+  mostrarMensaje.value = true
+  setTimeout(() => {
+    mostrarMensaje.value = false
+  }, 3000)
+}
+
 // 🔹 Validación de formularios
 const formularioNuevoCompleto = computed(() => {
   const r = nuevoResultado.value
-  return r.codigo_ingreso && r.colesterol_total && r.colesterol_hdl && r.colesterol_ldl && r.trigliceridos && r.laboratorista
+  return r.codigo_ingreso && r.colesterol_total && r.colesterol_hdl && r.colesterol_ldl && r.colesterol_ldl && r.trigliceridos && r.laboratorista
 })
 
 const formularioEdicionCompleto = computed(() => {
@@ -130,10 +174,13 @@ const formularioEdicionCompleto = computed(() => {
 // 🔹 Cargar datos
 const cargarResultados = async () => {
   try {
-    const response = await axios.get('http://127.0.0.1:8000/api/resultados/')
+    // Se añade la barra diagonal aquí
+    const response = await axios.get(RESULTADOS_API_URL + '/')
+    // Asume que la API devuelve { "resultados": [...] }
     resultados.value = response.data.resultados || response.data
   } catch (error) {
     console.error('Error al cargar resultados:', error)
+    mostrarNotificacion("Error al cargar resultados.", true)
   } finally {
     cargando.value = false
   }
@@ -141,7 +188,9 @@ const cargarResultados = async () => {
 
 const cargarPacientes = async () => {
   try {
-    const response = await axios.get('http://127.0.0.1:8000/api/pacientes/')
+    // Se añade la barra diagonal aquí
+    const response = await axios.get(PACIENTES_API_URL + '/')
+    // Asume que la API de pacientes devuelve { "pacientes": [...] }
     pacientes.value = response.data.pacientes || response.data
   } catch (error) {
     console.error('Error al cargar pacientes:', error)
@@ -166,16 +215,20 @@ const resultadosFiltrados = computed(() => {
 // 🔹 Crear resultado
 const crearResultado = async () => {
   if (!formularioNuevoCompleto.value) {
-    alert('Completa todos los campos antes de guardar.')
+    mostrarNotificacion('Completa todos los campos antes de guardar.', true)
     return
   }
   try {
-    await axios.post('http://127.0.0.1:8000/api/resultados/', nuevoResultado.value)
-    alert('Resultado agregado exitosamente')
+    // Se añade la barra diagonal aquí
+    await axios.post(RESULTADOS_API_URL + '/', nuevoResultado.value)
+    mostrarNotificacion('Resultado agregado exitosamente')
+    // Limpiar formulario
     Object.keys(nuevoResultado.value).forEach(k => nuevoResultado.value[k] = '')
     await cargarResultados()
   } catch (error) {
     console.error('Error al crear resultado:', error)
+    // Captura el mensaje de error detallado del backend
+    mostrarNotificacion(`Error al crear resultado: ${error.response?.data?.Message || error.message}`, true)
   }
 }
 
@@ -186,22 +239,25 @@ const editarResultado = (resultado) => {
 
 const guardarEdicion = async () => {
   if (!formularioEdicionCompleto.value) {
-    alert('Completa todos los campos antes de guardar.')
+    mostrarNotificacion('Completa todos los campos antes de guardar.', true)
     return
   }
   try {
-    await axios.put(`http://127.0.0.1:8000/api/resultados/${resultadoEditando.value.id}/`, {
+    // URL se construye como /resultados/ID/
+    await axios.put(`${RESULTADOS_API_URL}/${resultadoEditando.value.id}/`, {
       colesterol_total: resultadoEditando.value.colesterol_total,
       colesterol_hdl: resultadoEditando.value.colesterol_hdl,
       colesterol_ldl: resultadoEditando.value.colesterol_ldl,
       trigliceridos: resultadoEditando.value.trigliceridos,
       laboratorista: resultadoEditando.value.laboratorista
     })
-    alert('Resultado actualizado exitosamente')
+    
+    mostrarNotificacion('Resultado actualizado exitosamente')
     resultadoEditando.value = null
     await cargarResultados()
   } catch (error) {
     console.error('Error al actualizar resultado:', error)
+    mostrarNotificacion(`Error al actualizar resultado: ${error.response?.data?.Message || error.message}`, true)
   }
 }
 
@@ -209,16 +265,32 @@ const cancelarEdicion = () => {
   resultadoEditando.value = null
 }
 
-// 🔹 Eliminar resultado
-const eliminarResultado = async (id) => {
-  if (confirm('¿Seguro que deseas eliminar este resultado?')) {
-    try {
-      await axios.delete(`http://127.0.0.1:8000/api/resultados/${id}/`)
-      alert('Resultado eliminado correctamente')
-      await cargarResultados()
-    } catch (error) {
-      console.error('Error al eliminar resultado:', error)
-    }
+// ------------------------------------
+// 🔹 Lógica de Eliminación (con Modal y Toast)
+// ------------------------------------
+
+// 1. Mostrar el modal y guardar el ID
+const mostrarConfirmacionModal = (id) => {
+  idResultadoAEliminar.value = id
+  mostrarConfirmacion.value = true
+}
+
+// 2. Ejecutar la eliminación tras confirmar
+const eliminarResultadoConfirmado = async () => {
+  const id = idResultadoAEliminar.value
+  mostrarConfirmacion.value = false // Cerrar modal inmediatamente
+
+  if (!id) return
+
+  try {
+    // URL se construye como /resultados/ID/
+    await axios.delete(`${RESULTADOS_API_URL}/${id}/`)
+    mostrarNotificacion('Resultado eliminado correctamente')
+    idResultadoAEliminar.value = null
+    await cargarResultados()
+  } catch (error) {
+    console.error('Error al eliminar resultado:', error)
+    mostrarNotificacion(`Error al eliminar resultado: ${error.response?.data?.Message || error.message}`, true)
   }
 }
 
@@ -229,6 +301,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Estilos existentes */
 .dashboard-container {
   display: flex;
   min-height: 100vh;
@@ -263,6 +336,14 @@ onMounted(() => {
   max-width: 1300px;
   margin: 2 auto;
 }
+/* AÑADIDO: Estilo explícito para el H2 dentro del contenedor de la tabla */
+.form-container h2 {
+    font-size: 1.5em;
+    color: #2c3e50; /* Gris oscuro para mayor contraste */
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+/* Fin de estilo añadido */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -275,10 +356,20 @@ th, td {
   padding: 10px;
   border-bottom: 1px solid #ddd;
   color: #000;
+  text-align: left;
 }
-tr:hover {
+tr:hover:not(:has(.btn-green)) { /* Evita hover en filas de edición */
   background-color: #f9f9f9;
 }
+/* Estilo para inputs en modo edición de tabla */
+td input {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
 .btn {
   border: none;
   padding: 6px 12px;
@@ -286,6 +377,7 @@ tr:hover {
   cursor: pointer;
   font-weight: 600;
   margin-right: 5px;
+  transition: background-color 0.3s ease;
 }
 .btn-edit {
   background-color: #3498db;
@@ -301,10 +393,121 @@ tr:hover {
 .btn-delete:hover {
   background-color: #c0392b;
 }
+.btn-green {
+    background-color: #2ecc71;
+    color: white;
+}
+.btn-green:hover:not(:disabled) {
+    background-color: #27ae60;
+}
+.btn:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+}
 .no-data {
   text-align: center;
   padding: 20px;
   color: #777;
 }
-</style>
+.action-section h3 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  color: #2c3e50;
+}
+.form-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.form-inline input,
+.form-inline select {
+  flex: 1;
+  min-width: 150px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+.form-inline button {
+  flex-shrink: 0;
+  padding: 8px 15px;
+}
 
+/* ------------------------------------ */
+/* Estilos para Modal y Toast */
+/* ------------------------------------ */
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  /* CORRECCIÓN: Asegurar texto negro en el modal */
+  color: #2c3e50; 
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  color: #e74c3c;
+}
+
+.modal-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Toast Notification */
+.toast-notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 15px 20px;
+  background-color: #2ecc71; /* Éxito */
+  /* CORRECCIÓN: Cambiar texto a negro para mejor contraste con fondo de color */
+  color: black; 
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1010;
+  font-weight: 600;
+}
+
+.toast-error {
+  background-color: #e74c3c; /* Error */
+  /* CORRECCIÓN: Forzar texto blanco para mejor contraste con el fondo rojo de error */
+  color: white; 
+}
+
+/* Transición para el Toast */
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.5s ease;
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateX(100%);
+  opacity: 0;
+}
+</style>
