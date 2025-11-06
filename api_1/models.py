@@ -1,11 +1,14 @@
 from django.db import models
 
-class laboratoristas(models.Model):
+class Laboratoristas(models.Model):
+    nombre = models.CharField(max_length=50)
+    codigo_interno = models.CharField(max_length=100, unique=True) 
+    titulo = models.CharField(max_length=150)
+    telefono = models.CharField(max_length=150)
+    
+    def __str__(self):
+        return f"{self.codigo_interno} - {self.nombre}"
 
-    nombre = models.CharField(max_length=50, )
-    codigo_interno = models.CharField(max_length=100,)
-    titulo = models.CharField(max_length=150,)
-    telefono = models.CharField(max_length=150,)
 
 class Paciente(models.Model):
     # El campo 'id' (Primary Key) se crea automáticamente por Django

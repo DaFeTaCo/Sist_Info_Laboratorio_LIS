@@ -19,7 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 # Asegúrate de que tu modelo se llama Paciente y tiene estos campos
 from .models import Paciente 
 from .models import Resultado
-
+from .models import Laboratoristas
 
 class PacienteView(View):
 
@@ -198,3 +198,79 @@ class ResultadoView(View):
                 status=500
             )
 
+@method_decorator(csrf_exempt, name='dispatch')
+class LaboratoristaView(View):
+    """
+    CRUD para la tabla Laboratoristas
+    """
+
+    # --- GET: listar todos o uno ---
+    def get(self, request, id=0):
+        if id > 0:
+            laboratoristas = list(Laboratoristas.objects.filter(id=id).values())
+            if len(laboratoristas) > 0:
+                datos = {"Message": "Success", "laboratorista": laboratoristas[0]}
+            else:
+                datos = {"Message": "Laboratorista no encontrado..."}
+            return JsonResponse(datos)
+        else:
+            laboratoristas = list(Laboratoristas.objects.values())
+            if len(laboratoristas) > 0:
+                datos = {"Message": "Success", "laboratoristas": laboratoristas}
+            else:
+                datos = {"Message": "No hay laboratoristas registrados..."}
+            return JsonResponse(datos)
+
+    # --- POST: crear nuevo laboratorista ---
+    def post(self, request):
+        try:
+            JsonData = json.loads(request.body)
+            Laboratoristas.objects.create(
+                nombre=JsonData["nombre"],
+                codigo_interno=JsonData["codigo_interno"],
+                titulo=JsonData["titulo"],
+                telefono=JsonData["telefono"]
+            )
+            datos = {"Message": "Success: Laboratorista creado"}
+            return JsonResponse(datos, status=201)
+        except KeyError as e:
+            datos = {"Message": f"Falta el campo requerido: {e}"}
+            return JsonResponse(datos, status=400)
+        except Exception as e:
+            datos = {"Message": f"Error al crear: {str(e)}"}
+            return JsonResponse(datos, status=500)
+
+    # --- PUT: actualizar laboratorista por ID ---
+    def put(self, request, id):
+        try:
+            JsonData = json.loads(request.body)
+            laboratorista = Laboratoristas.objects.get(id=id)
+
+            laboratorista.nombre = JsonData.get("nombre", laboratorista.nombre)
+            laboratorista.codigo_interno = JsonData.get("codigo_interno", laboratorista.codigo_interno)
+            laboratorista.titulo = JsonData.get("titulo", laboratorista.titulo)
+            laboratorista.telefono = JsonData.get("telefono", laboratorista.telefono)
+            laboratorista.save()
+
+            datos = {"Message": "Success: Laboratorista actualizado"}
+            return JsonResponse(datos, status=200)
+        except Laboratoristas.DoesNotExist:
+            datos = {"Message": "Laboratorista no encontrado..."}
+            return JsonResponse(datos, status=404)
+        except Exception as e:
+            datos = {"Message": f"Error al actualizar: {str(e)}"}
+            return JsonResponse(datos, status=500)
+
+    # --- DELETE: eliminar laboratorista por ID ---
+    def delete(self, request, id):
+        try:
+            laboratorista = Laboratoristas.objects.get(id=id)
+            laboratorista.delete()
+            datos = {"Message": "Success: Laboratorista eliminado"}
+            return JsonResponse(datos, status=200)
+        except Laboratoristas.DoesNotExist:
+            datos = {"Message": "Laboratorista no encontrado..."}
+            return JsonResponse(datos, status=404)
+        except Exception as e:
+            datos = {"Message": f"Error al eliminar: {str(e)}"}
+            return JsonResponse(datos, status=500)
