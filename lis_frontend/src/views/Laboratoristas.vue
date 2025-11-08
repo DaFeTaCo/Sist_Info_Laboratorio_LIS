@@ -20,55 +20,57 @@
 
         <div v-if="cargando">Cargando datos...</div>
 
-        <table v-else>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Código Interno</th>
-              <th>Nombre</th>
-              <th>Título Profesional</th>
-              <th>Teléfono</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="l in laboratoristasFiltrados" :key="l.id">
-              
-              <!-- MODO EDICIÓN -->
-              <template v-if="laboratoristaEditando?.codigo_interno === l.codigo_interno">
-                <td data-label="ID">{{ l.id }}</td>
-                <td data-label="Código Interno">{{ l.codigo_interno }}</td>
-                <td data-label="Nombre"><input v-model="laboratoristaEditando.nombre" /></td>
-                <td data-label="Título Profesional">
-                  <select v-model="laboratoristaEditando.titulo">
-                    <option value="Bacteriólogo/a">Bacteriólogo/a</option>
-                    <option value="Microbiólogo/a">Microbiólogo/a</option>
-                    <option value="Biólogo/a">Biólogo/a</option>
-                  </select>
-                </td>
-                <td data-label="Teléfono"><input v-model="laboratoristaEditando.telefono" /></td>
-                <td>
-                  <button class="btn btn-green" @click="guardarEdicion" :disabled="!formularioEdicionCompleto">Guardar</button>
-                  <button class="btn btn-delete" @click="cancelarEdicion">Cancelar</button>
-                </td>
-              </template>
+        <div class="tabla-scroll" v-else>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Código Interno</th>
+                <th>Nombre</th>
+                <th>Título Profesional</th>
+                <th>Teléfono</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="l in laboratoristasFiltrados" :key="l.id">
+                
+                <!-- MODO EDICIÓN -->
+                <template v-if="laboratoristaEditando?.codigo_interno === l.codigo_interno">
+                  <td data-label="ID">{{ l.id }}</td>
+                  <td data-label="Código Interno">{{ l.codigo_interno }}</td>
+                  <td data-label="Nombre"><input v-model="laboratoristaEditando.nombre" /></td>
+                  <td data-label="Título Profesional">
+                    <select v-model="laboratoristaEditando.titulo">
+                      <option value="Bacteriólogo/a">Bacteriólogo/a</option>
+                      <option value="Microbiólogo/a">Microbiólogo/a</option>
+                      <option value="Biólogo/a">Biólogo/a</option>
+                    </select>
+                  </td>
+                  <td data-label="Teléfono"><input v-model="laboratoristaEditando.telefono" @input="soloNumeros" /></td>
+                  <td>
+                    <button class="btn btn-green" @click="guardarEdicion" :disabled="!formularioEdicionCompleto">Guardar</button>
+                    <button class="btn btn-delete" @click="cancelarEdicion">Cancelar</button>
+                  </td>
+                </template>
 
-              <!-- MODO VISTA -->
-              <template v-else>
-                <td data-label="ID">{{ l.id }}</td>
-                <td data-label="Código Interno">{{ l.codigo_interno }}</td>
-                <td data-label="Nombre">{{ l.nombre }}</td>
-                <td data-label="Título Profesional">{{ l.titulo }}</td>
-                <td data-label="Teléfono">{{ l.telefono }}</td>
-                <td>
-                  <button class="btn btn-edit" @click="editarLaboratorista(l)">Editar</button>
-                  <button class="btn btn-delete" @click="mostrarConfirmacionModal(l.codigo_interno)">Eliminar</button>
-                </td>
-              </template>
+                <!-- MODO VISTA -->
+                <template v-else>
+                  <td data-label="ID">{{ l.id }}</td>
+                  <td data-label="Código Interno">{{ l.codigo_interno }}</td>
+                  <td data-label="Nombre">{{ l.nombre }}</td>
+                  <td data-label="Título Profesional">{{ l.titulo }}</td>
+                  <td data-label="Teléfono">{{ l.telefono }}</td>
+                  <td>
+                    <button class="btn btn-edit" @click="editarLaboratorista(l)">Editar</button>
+                    <button class="btn btn-delete" @click="mostrarConfirmacionModal(l.codigo_interno)">Eliminar</button>
+                  </td>
+                </template>
 
-            </tr>
-          </tbody>
-        </table>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div v-if="laboratoristasFiltrados.length === 0 && !cargando" class="no-data">
@@ -87,7 +89,7 @@
             <option value="Microbiólogo/a">Microbiólogo/a</option>
             <option value="Biólogo/a">Biólogo/a</option>
           </select>
-          <input v-model="nuevoLaboratorista.telefono" placeholder="Teléfono" />
+          <input v-model="nuevoLaboratorista.telefono" placeholder="Teléfono" @input="soloNumeros"/>
 
           <button class="btn btn-green" type="submit" :disabled="!formularioNuevoCompleto">Agregar</button>
         </form>
@@ -260,23 +262,17 @@ const eliminarLaboratoristaConfirmado = async () => {
   }
 }
 
+const soloNumeros = (event) => {
+  event.target.value = event.target.value.replace(/\D/g, "").slice(0, 10)
+}
+
 onMounted(() => cargarLaboratoristas())
 </script>
 
 
 <style scoped>
 /* Estilos generales */
-.dashboard-container {
-  display: flex;
-  min-height: 100vh;
-  background-color: #f4f7f6;
-}
-.main-content {
-  flex-grow: 1;
-  padding: 30px;
-  max-width: 1400px;
-  margin: 0 auto;
-}
+
 .header h1 {
   font-size: 2em;
   color: #2c3e50;
@@ -298,9 +294,27 @@ onMounted(() => cargarLaboratoristas())
   padding: 25px;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  max-width: 1300px;
+  max-width: 1200px;
   margin-top: 20px;
 }
+
+.tabla-scroll {
+  max-height: 250px;
+  overflow-y: auto;
+  overflow-x: auto;
+  margin-top: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+/* Mantener títulos fijos arriba cuando haga scroll */
+.tabla-scroll thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+
 /* Color gris oscuro para el H2 (el color #2c3e50 fue aplicado en el turno anterior) */
 h2 {
   color: #2c3e50; 

@@ -20,61 +20,63 @@
 
         <div v-if="cargando">Cargando resultados...</div>
 
-        <table v-else>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Código Ingreso</th>
-              <th>Nombre</th>
-              <th>Colesterol Total <br>(mg/dL)</th>
-              <th>Colesterol HDL <br>(mg/dL)</th>
-              <th>Colesterol LDL <br>(mg/dL)</th>
-              <th>Triglicéridos <br>(mg/dL)</th>
-              <th>Laboratorista</th>
-              <th>Acciones</th>
-          </tr>
-          </thead>
-          <tbody>
-            <tr v-for="r in resultadosFiltrados" :key="r.id">
-              <template v-if="resultadoEditando?.id === r.id">
-                <td>{{ r.id }}</td>
-                <td>{{ r.codigo_ingreso }}</td>
-                <td>{{ obtenerNombrePaciente(r.codigo_ingreso) }}</td>
-                <td><input type="number" step="0.1" min="10" v-model="resultadoEditando.colesterol_total" /></td>
-                <td><input type="number" step="0.1" min="10" v-model="resultadoEditando.colesterol_hdl" /></td>
-                <td><input type="number" step="0.1" min="10" v-model="resultadoEditando.colesterol_ldl" /></td>
-                <td><input type="number" step="0.1" min="10" v-model="resultadoEditando.trigliceridos" /></td>
-                <td>
-                  <select v-model="resultadoEditando.laboratorista" required>
-                    <option disabled value="">Seleccione laboratorista</option>
-                    <option v-for="l in laboratoristas" :key="l.id" :value="l.codigo_interno">
-                      {{ l.codigo_interno }} - {{ l.nombre }}
-                    </option>
-                  </select>
-                </td>
-                <td>
-                  <button class="btn btn-green" @click="guardarEdicion" :disabled="!formularioEdicionCompleto">Guardar</button>
-                  <button class="btn btn-delete" @click="cancelarEdicion">Cancelar</button>
-                </td>
-              </template>
-
-              <template v-else>
-                <td>{{ r.id }}</td>
-                <td>{{ r.codigo_ingreso }}</td>
-                <td>{{ obtenerNombrePaciente(r.codigo_ingreso) }}</td>
-                <td>{{ r.colesterol_total }}</td>
-                <td>{{ r.colesterol_hdl }}</td>
-                <td>{{ r.colesterol_ldl }}</td>
-                <td>{{ r.trigliceridos }}</td>
-                <td>{{ r.laboratorista }}</td>
-                <td>
-                  <button class="btn btn-edit" @click="editarResultado(r)">Editar</button>
-                  <button class="btn btn-delete" @click="mostrarConfirmacionModal(r.id)">Eliminar</button>
-                </td>
-              </template>
+        <div class="tabla-scroll" v-else>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Código Ingreso</th>
+                <th>Nombre</th>
+                <th>Colesterol Total <br>(mg/dL)</th>
+                <th>Colesterol HDL <br>(mg/dL)</th>
+                <th>Colesterol LDL <br>(mg/dL)</th>
+                <th>Triglicéridos <br>(mg/dL)</th>
+                <th>Laboratorista</th>
+                <th>Acciones</th>
             </tr>
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              <tr v-for="r in resultadosFiltrados" :key="r.id">
+                <template v-if="resultadoEditando?.id === r.id">
+                  <td>{{ r.id }}</td>
+                  <td>{{ r.codigo_ingreso }}</td>
+                  <td>{{ obtenerNombrePaciente(r.codigo_ingreso) }}</td>
+                  <td><input type="number" step="0.1" min="0" v-model="resultadoEditando.colesterol_total" /></td>
+                  <td><input type="number" step="0.1" min="0" v-model="resultadoEditando.colesterol_hdl" /></td>
+                  <td><input type="number" step="0.1" min="0" v-model="resultadoEditando.colesterol_ldl" /></td>
+                  <td><input type="number" step="0.1" min="0" v-model="resultadoEditando.trigliceridos" /></td>
+                  <td>
+                    <select v-model="resultadoEditando.laboratorista" required>
+                      <option disabled value="">Laboratorista</option>
+                      <option v-for="l in laboratoristas" :key="l.id" :value="l.codigo_interno">
+                        {{ l.codigo_interno }} - {{ l.nombre }}
+                      </option>
+                    </select>
+                  </td>
+                  <td>
+                    <button class="btn btn-green" @click="guardarEdicion" :disabled="!formularioEdicionCompleto">Guardar</button>
+                    <button class="btn btn-delete" @click="cancelarEdicion">Cancelar</button>
+                  </td>
+                </template>
+
+                <template v-else>
+                  <td>{{ r.id }}</td>
+                  <td>{{ r.codigo_ingreso }}</td>
+                  <td>{{ obtenerNombrePaciente(r.codigo_ingreso) }}</td>
+                  <td>{{ r.colesterol_total }}</td>
+                  <td>{{ r.colesterol_hdl }}</td>
+                  <td>{{ r.colesterol_ldl }}</td>
+                  <td>{{ r.trigliceridos }}</td>
+                  <td>{{ r.laboratorista }}</td>
+                  <td>
+                    <button class="btn btn-edit" @click="editarResultado(r)">Editar</button>
+                    <button class="btn btn-delete" @click="mostrarConfirmacionModal(r.id)">Eliminar</button>
+                  </td>
+                </template>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <div v-if="resultadosFiltrados.length === 0" class="no-data">
           No se encontraron resultados.
         </div>
@@ -85,19 +87,19 @@
         <h3>Agregar nuevo resultado</h3>
         <form @submit.prevent="crearResultado" class="form-inline">
           <select v-model="nuevoResultado.codigo_ingreso" required>
-            <option disabled value="">Seleccione código ingreso</option>
+            <option disabled value="">Código ingreso</option>
             <option v-for="p in pacientes" :key="p.id" :value="p.codigo_ingreso">
               {{ p.codigo_ingreso }} - {{ p.nombre }} {{ p.apellido }}
             </option>
           </select>
 
-          <input type="number" step="0.1" min="10" v-model="nuevoResultado.colesterol_total" placeholder="Colesterol total" required />
-          <input type="number" step="0.1" min="10" v-model="nuevoResultado.colesterol_hdl" placeholder="Colesterol HDL" required />
-          <input type="number" step="0.1" min="10" v-model="nuevoResultado.colesterol_ldl" placeholder="Colesterol LDL" required />
-          <input type="number" step="0.1" min="10" v-model="nuevoResultado.trigliceridos" placeholder="Triglicéridos" required />
+          <input type="number" step="0.1" min="0" v-model="nuevoResultado.colesterol_total" placeholder="Colesterol total" required />
+          <input type="number" step="0.1" min="0" v-model="nuevoResultado.colesterol_hdl" placeholder="Colesterol HDL" required />
+          <input type="number" step="0.1" min="0" v-model="nuevoResultado.colesterol_ldl" placeholder="Colesterol LDL" required />
+          <input type="number" step="0.1" min="0" v-model="nuevoResultado.trigliceridos" placeholder="Triglicéridos" required />
 
           <select v-model="nuevoResultado.laboratorista" required>
-            <option disabled value="">Seleccione laboratorista</option>
+            <option disabled value="">Laboratorista</option>
             <option v-for="l in laboratoristas" :key="l.id" :value="l.codigo_interno">
               {{ l.codigo_interno }} - {{ l.nombre }}
             </option>
@@ -223,7 +225,7 @@ const cargarLaboratoristas = async () => {
 // 🔹 Obtener nombre del paciente por código de ingreso
 const obtenerNombrePaciente = (codigo) => {
   const paciente = pacientes.value.find(p => p.codigo_ingreso === codigo)
-  return paciente ? `${paciente.nombre} ${paciente.apellido}` : 'Desconocido'
+  return paciente ? `${paciente.nombre} ${paciente.apellido}` : 'Paciente eliminado'
 }
 
 // 🔹 Filtro de búsqueda
@@ -326,17 +328,7 @@ onMounted(() => {
 
 <style scoped>
 /* Estilos existentes */
-.dashboard-container {
-  display: flex;
-  min-height: 100vh;
-  background-color: #f4f7f6;
-}
-.main-content {
-  flex-grow: 1;
-  padding: 30px;
-  max-width: 1400px;
-  margin: 0 auto;
-}
+
 .header h1 {
   font-size: 2em;
   color: #2c3e50;
@@ -367,6 +359,25 @@ onMounted(() => {
     margin-top: 0;
     margin-bottom: 15px;
 }
+
+.tabla-scroll {
+  max-height: 250px;
+  overflow-y: auto;
+  overflow-x: auto;
+  margin-top: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+/* Mantener títulos fijos arriba cuando haga scroll */
+.tabla-scroll thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+
+
 /* Fin de estilo añadido */
 table {
   width: 100%;

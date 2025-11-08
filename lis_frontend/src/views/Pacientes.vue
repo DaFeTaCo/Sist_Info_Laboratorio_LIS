@@ -20,54 +20,57 @@
 
         <div v-if="cargando">Cargando pacientes...</div>
 
-        <table v-else>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Documento</th>
-              <th>Nombre</th>
-              <th>Apellido</th>
-              <th>Cod. Ingreso</th>
-              <th>Dirección</th>
-              <th>Teléfono</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="p in pacientesFiltrados" :key="p.id">
-              <!-- MODO EDICIÓN -->
-              <template v-if="pacienteEditando?.id === p.id">
-                <td>{{ p.id }}</td>
-                <td><input v-model="pacienteEditando.documento" /></td>
-                <td><input v-model="pacienteEditando.nombre" /></td>
-                <td><input v-model="pacienteEditando.apellido" /></td>
-                <!-- El código de ingreso se mantiene estático en la edición en línea -->
-                <td>{{ p.codigo_ingreso }}</td> 
-                <td><input v-model="pacienteEditando.direccion" /></td>
-                <td><input v-model="pacienteEditando.telefono" /></td>
-                <td>
-                  <button class="btn btn-green" @click="guardarEdicion" :disabled="!formularioEdicionCompleto">Guardar</button>
-                  <button class="btn btn-delete" @click="cancelarEdicion">Cancelar</button>
-                </td>
-              </template>
+        <div class="tabla-scroll" v-else>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Documento</th>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>Cod. Ingreso</th>
+                <th>Dirección</th>
+                <th>Teléfono</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in pacientesFiltrados" :key="p.id">
+                <!-- MODO EDICIÓN -->
+                <template v-if="pacienteEditando?.id === p.id">
+                  <td>{{ p.id }}</td>
+                  <td><input v-model="pacienteEditando.documento" @input="soloNumeros" /></td>
+                  <td><input v-model="pacienteEditando.nombre" /></td>
+                  <td><input v-model="pacienteEditando.apellido" /></td>
+                  <!-- El código de ingreso se mantiene estático en la edición en línea -->
+                  <td>{{ p.codigo_ingreso }}</td> 
+                  <td><input v-model="pacienteEditando.direccion" /></td>
+                  <td><input v-model="pacienteEditando.telefono" @input="soloNumeros"/></td>
+                  <td>
+                    <button class="btn btn-green" @click="guardarEdicion" :disabled="!formularioEdicionCompleto">Guardar</button>
+                    <button class="btn btn-delete" @click="cancelarEdicion">Cancelar</button>
+                  </td>
+                </template>
 
-              <!-- MODO VISTA -->
-              <template v-else>
-                <td>{{ p.id }}</td>
-                <td>{{ p.documento }}</td>
-                <td>{{ p.nombre }}</td>
-                <td>{{ p.apellido }}</td>
-                <td>{{ p.codigo_ingreso }}</td>
-                <td>{{ p.direccion }}</td>
-                <td>{{ p.telefono }}</td>
-                <td>
-                  <button class="btn btn-edit" @click="editarPaciente(p)">Editar</button>
-                  <button class="btn btn-delete" @click="mostrarConfirmacionModal(p.id)">Eliminar</button>
-                </td>
-              </template>
-            </tr>
-          </tbody>
-        </table>
+                <!-- MODO VISTA -->
+                <template v-else>
+                  <td>{{ p.id }}</td>
+                  <td>{{ p.documento }}</td>
+                  <td>{{ p.nombre }}</td>
+                  <td>{{ p.apellido }}</td>
+                  <td>{{ p.codigo_ingreso }}</td>
+                  <td>{{ p.direccion }}</td>
+                  <td>{{ p.telefono }}</td>
+                  <td>
+                    <button class="btn btn-edit" @click="editarPaciente(p)">Editar</button>
+                    <button class="btn btn-delete" @click="mostrarConfirmacionModal(p.id)">Eliminar</button>
+                  </td>
+                </template>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <div v-if="pacientesFiltrados.length === 0" class="no-data">
           No se encontraron pacientes.
         </div>
@@ -77,12 +80,11 @@
       <div class="action-section">
         <h3>Registrar nuevo paciente</h3>
         <form @submit.prevent="crearPaciente" class="form-inline">
-          <input v-model="nuevoPaciente.documento" placeholder="Documento" required />
+          <input v-model="nuevoPaciente.documento" placeholder="Documento" @input="soloNumeros" required />
           <input v-model="nuevoPaciente.nombre" placeholder="Nombre" required />
           <input v-model="nuevoPaciente.apellido" placeholder="Apellido" required />
-          <input v-model="nuevoPaciente.codigo_ingreso" placeholder="Código de Ingreso" required />
-          <input v-model="nuevoPaciente.direccion" placeholder="Dirección (Opcional)" />
-          <input v-model="nuevoPaciente.telefono" placeholder="Teléfono (Opcional)" />
+          <input v-model="nuevoPaciente.direccion" placeholder="Dirección" required/>
+          <input v-model="nuevoPaciente.telefono" placeholder="Teléfono" @input="soloNumeros" required/>
 
           <button class="btn btn-green" type="submit" :disabled="!formularioNuevoCompleto">Agregar</button>
         </form>
@@ -155,14 +157,13 @@ const mostrarNotificacion = (mensaje, error = false) => {
 // Campos obligatorios para la creación: documento, nombre, apellido, codigo_ingreso
 const formularioNuevoCompleto = computed(() => {
   const p = nuevoPaciente.value
-  return p.documento && p.nombre && p.apellido && p.codigo_ingreso
+  return p.documento && p.nombre && p.apellido
 })
 
 // Campos obligatorios para la edición (generalmente son los mismos)
 const formularioEdicionCompleto = computed(() => {
   const p = pacienteEditando.value
-  return p && p.documento && p.nombre && p.apellido && p.codigo_ingreso
-})
+  return p && p.documento && p.nombre && p.apellido})
 
 // 🔹 Cargar datos
 const cargarPacientes = async () => {
@@ -205,6 +206,11 @@ const crearPaciente = async () => {
     mostrarNotificacion(`Error al crear paciente: ${error.response?.data?.Message || error.message}`, true)
   }
 }
+
+const soloNumeros = (event) => {
+  event.target.value = event.target.value.replace(/\D/g, "").slice(0, 10)
+}
+
 
 // ------------------------------------
 // 🔹 Lógica de Edición
@@ -280,17 +286,7 @@ onMounted(() => {
 
 <style scoped>
 /* Estilos generales */
-.dashboard-container {
-  display: flex;
-  min-height: 100vh;
-  background-color: #f4f7f6;
-}
-.main-content {
-  flex-grow: 1;
-  padding: 30px;
-  max-width: 1400px;
-  margin: 0 auto;
-}
+
 .header h1 {
   font-size: 2em;
   color: #2c3e50;
@@ -315,6 +311,25 @@ onMounted(() => {
   max-width: 1300px;
   margin-top: 20px;
 }
+
+
+.tabla-scroll {
+  max-height: 250px;
+  overflow-y: auto;
+  overflow-x: auto;
+  margin-top: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+/* Mantener títulos fijos arriba cuando haga scroll */
+.tabla-scroll thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+
 /* Color gris oscuro para el H2 (el color #2c3e50 fue aplicado en el turno anterior) */
 h2 {
   color: #2c3e50; 
@@ -332,6 +347,7 @@ h3 {
 table {
   width: 100%;
   border-collapse: collapse;
+  
 }
 thead {
   background-color: #1abc9c;

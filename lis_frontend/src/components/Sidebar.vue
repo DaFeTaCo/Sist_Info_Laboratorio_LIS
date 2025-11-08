@@ -6,19 +6,22 @@
       <router-link to="/pacientes" class="sidebar-link">Pacientes</router-link>
       <router-link to="/laboratoristas" class="sidebar-link">Laboratoristas</router-link>
       <router-link to="/resultados" class="sidebar-link">Resultados</router-link>
-      <!-- puedes seguir agregando más -->
     </nav>
   </div>
 </template>
 
 <style scoped>
 .sidebar {
-  width: 240px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 220px;
   background-color: #2c3e50;
   color: white;
   padding: 20px;
-  min-height: 100vh;
+  height: 100vh;
 }
+
 
 .sidebar h2 {
   font-size: 1.4em;

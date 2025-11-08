@@ -86,7 +86,9 @@ DATABASES = {
         "HOST" : "127.0.0.1",
         "PORT" : 3306,
         "USER" : "root",
+        "PASSWORD": "@tene@2025",
         "NAME": "sist_lab",
+        
     }
 }
 

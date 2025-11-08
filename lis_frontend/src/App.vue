@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard-container">
-    <Sidebar />
+    <Sidebar class="sidebar" />
     <div class="main-content">
       <router-view />
     </div>
@@ -13,16 +13,27 @@ import Sidebar from './components/Sidebar.vue'
 
 <style scoped>
 .dashboard-container {
-  display: flex;
-  height: 100vh;
-  width: 100vw; /* ✅ Usa todo el ancho de la ventana */
-  overflow: hidden;
+  display: block;
 }
 
 .main-content {
-  flex-grow: 1;
+  margin-left: 90px;
+  width: calc(100vw - 220px);
+  height: 100vh;
   padding: 40px;
   background-color: #f4f7f6;
   overflow-y: auto;
+}
+</style>
+
+<style>
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  background-color: #f4f7f6;
 }
 </style>

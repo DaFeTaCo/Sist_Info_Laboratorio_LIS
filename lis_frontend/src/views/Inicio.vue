@@ -1,5 +1,4 @@
 <template>
-  <div class="home-container">
     <main class="content">
       <div class="text-and-cards">
         <!-- Texto a la izquierda -->
@@ -44,7 +43,6 @@
         </div>
       </div>
     </main>
-  </div>
 </template>
 
 <script>
@@ -54,17 +52,14 @@ export default {
 </script>
 
 <style scoped>
-.home-container {
-  display: flex;
-  min-height: 100vh;
-  background-color: #f4f7f6;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
+
 
 /* Contenido principal */
 .content {
   flex: 1;
   padding: 40px;
+  margin-left: 40px;
+
 }
 
 /* Contenedor general de texto + tarjetas */

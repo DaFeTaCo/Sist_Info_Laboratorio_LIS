@@ -11,12 +11,31 @@ class Laboratoristas(models.Model):
 
 
 class Paciente(models.Model):
-    documento = models.CharField(max_length=50)
+    documento = models.CharField(max_length=50, unique=True)
     nombre = models.CharField(max_length=100)
     apellido = models.CharField(max_length=100)
-    codigo_ingreso = models.CharField(max_length=150, null=True, blank=True)
+    codigo_ingreso = models.CharField(max_length=150, null=True, blank=True, editable=False, unique=True)
     direccion = models.CharField(max_length=150, null=True, blank=True)
     telefono = models.CharField(max_length=50, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.pk:  
+            last = Paciente.objects.order_by('-id').first()
+            next_id = last.id + 1 if last else 1
+            inicial_nombre = self.nombre[0].upper()
+            inicial_apellido = self.apellido[0].upper()
+
+            # XX0001
+            self.codigo_ingreso = f"{inicial_nombre}{inicial_apellido}{next_id:04d}"
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.nombre} {self.apellido} - {self.codigo_ingreso}"
+
+
+
+
 class Resultado(models.Model):
 
     codigo_ingreso = models.CharField(max_length=10) 
