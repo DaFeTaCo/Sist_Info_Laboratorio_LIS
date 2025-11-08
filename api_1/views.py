@@ -201,19 +201,23 @@ class ResultadoView(View):
 @method_decorator(csrf_exempt, name='dispatch')
 class LaboratoristaView(View):
     """
-    CRUD para la tabla Laboratoristas
+    CRUD para la tabla Laboratoristas, usando codigo_interno como identificador único.
     """
 
-    # --- GET: listar todos o uno ---
-    def get(self, request, id=0):
-        if id > 0:
-            laboratoristas = list(Laboratoristas.objects.filter(id=id).values())
-            if len(laboratoristas) > 0:
-                datos = {"Message": "Success", "laboratorista": laboratoristas[0]}
-            else:
-                datos = {"Message": "Laboratorista no encontrado..."}
-            return JsonResponse(datos)
+    # --- GET: listar todos o uno (por codigo_interno) ---
+    # Asumimos que si se pasa un parámetro en la URL, este es el codigo_interno.
+    def get(self, request, codigo_interno_url=None):
+        if codigo_interno_url:
+            try:
+                # Busca por el campo codigo_interno
+                laboratorista = Laboratoristas.objects.get(codigo_interno=codigo_interno_url)
+                datos = {"Message": "Success", "laboratorista": list(Laboratoristas.objects.filter(codigo_interno=codigo_interno_url).values())[0]}
+                return JsonResponse(datos)
+            except Laboratoristas.DoesNotExist:
+                datos = {"Message": f"Laboratorista con código interno '{codigo_interno_url}' no encontrado."}
+                return JsonResponse(datos, status=404)
         else:
+            # Listar todos
             laboratoristas = list(Laboratoristas.objects.values())
             if len(laboratoristas) > 0:
                 datos = {"Message": "Success", "laboratoristas": laboratoristas}
@@ -225,11 +229,16 @@ class LaboratoristaView(View):
     def post(self, request):
         try:
             JsonData = json.loads(request.body)
+            # Validación de unicidad de codigo_interno
+            if Laboratoristas.objects.filter(codigo_interno=JsonData["codigo_interno"]).exists():
+                datos = {"Message": "Error: El código interno ya existe."}
+                return JsonResponse(datos, status=409)
+
             Laboratoristas.objects.create(
                 nombre=JsonData["nombre"],
                 codigo_interno=JsonData["codigo_interno"],
                 titulo=JsonData["titulo"],
-                telefono=JsonData["telefono"]
+                telefono=JsonData.get("telefono", "") # Usar .get para que sea opcional si no se envía
             )
             datos = {"Message": "Success: Laboratorista creado"}
             return JsonResponse(datos, status=201)
@@ -240,36 +249,40 @@ class LaboratoristaView(View):
             datos = {"Message": f"Error al crear: {str(e)}"}
             return JsonResponse(datos, status=500)
 
-    # --- PUT: actualizar laboratorista por ID ---
-    def put(self, request, id):
+    # --- PUT: actualizar laboratorista por codigo_interno ---
+    def put(self, request, codigo_interno_url):
         try:
             JsonData = json.loads(request.body)
-            laboratorista = Laboratoristas.objects.get(id=id)
+            # Busca al laboratorista por codigo_interno
+            laboratorista = Laboratoristas.objects.get(codigo_interno=codigo_interno_url)
 
+            # Actualiza solo los campos mutables
             laboratorista.nombre = JsonData.get("nombre", laboratorista.nombre)
-            laboratorista.codigo_interno = JsonData.get("codigo_interno", laboratorista.codigo_interno)
             laboratorista.titulo = JsonData.get("titulo", laboratorista.titulo)
             laboratorista.telefono = JsonData.get("telefono", laboratorista.telefono)
+            
+            # Nota: codigo_interno se considera inmutable una vez creado.
             laboratorista.save()
 
             datos = {"Message": "Success: Laboratorista actualizado"}
             return JsonResponse(datos, status=200)
         except Laboratoristas.DoesNotExist:
-            datos = {"Message": "Laboratorista no encontrado..."}
+            datos = {"Message": f"Laboratorista con código interno '{codigo_interno_url}' no encontrado."}
             return JsonResponse(datos, status=404)
         except Exception as e:
             datos = {"Message": f"Error al actualizar: {str(e)}"}
             return JsonResponse(datos, status=500)
 
-    # --- DELETE: eliminar laboratorista por ID ---
-    def delete(self, request, id):
+    # --- DELETE: eliminar laboratorista por codigo_interno ---
+    def delete(self, request, codigo_interno_url):
         try:
-            laboratorista = Laboratoristas.objects.get(id=id)
+            # Busca al laboratorista por codigo_interno
+            laboratorista = Laboratoristas.objects.get(codigo_interno=codigo_interno_url)
             laboratorista.delete()
             datos = {"Message": "Success: Laboratorista eliminado"}
             return JsonResponse(datos, status=200)
         except Laboratoristas.DoesNotExist:
-            datos = {"Message": "Laboratorista no encontrado..."}
+            datos = {"Message": f"Laboratorista con código interno '{codigo_interno_url}' no encontrado."}
             return JsonResponse(datos, status=404)
         except Exception as e:
             datos = {"Message": f"Error al eliminar: {str(e)}"}

@@ -11,10 +11,8 @@ urlpatterns = [
     # --------------------
     # Rutas de Laboratoristas
     # --------------------
-    path('laboratoristas/', LaboratoristaView.as_view(), name='laboratoristas_listar_crear'),
-    path('laboratoristas/<int:id>/', LaboratoristaView.as_view(), name='laboratoristas_detalle'),
-
-
+    path('laboratoristas/', LaboratoristaView.as_view(), name='laboratoristas_listar_crear'),    
+    path('laboratoristas/<str:codigo_interno_url>/', LaboratoristaView.as_view(), name='laboratoristas_detalle'),
     # --------------------
     # Rutas de Resultados
     # --------------------

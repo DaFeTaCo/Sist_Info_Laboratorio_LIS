@@ -26,13 +26,13 @@
               <th>ID</th>
               <th>Código Ingreso</th>
               <th>Nombre</th>
-              <th>Colesterol Total</th>
-              <th>Colesterol HDL</th>
-              <th>Colesterol LDL</th>
-              <th>Triglicéridos</th>
+              <th>Colesterol Total <br>(mg/dL)</th>
+              <th>Colesterol HDL <br>(mg/dL)</th>
+              <th>Colesterol LDL <br>(mg/dL)</th>
+              <th>Triglicéridos <br>(mg/dL)</th>
               <th>Laboratorista</th>
               <th>Acciones</th>
-            </tr>
+          </tr>
           </thead>
           <tbody>
             <tr v-for="r in resultadosFiltrados" :key="r.id">

@@ -11,8 +11,6 @@ class Laboratoristas(models.Model):
 
 
 class Paciente(models.Model):
-    # El campo 'id' (Primary Key) se crea automáticamente por Django
-
     documento = models.CharField(max_length=50)
     nombre = models.CharField(max_length=100)
     apellido = models.CharField(max_length=100)

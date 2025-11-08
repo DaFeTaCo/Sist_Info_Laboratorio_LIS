@@ -2,7 +2,7 @@
   <div class="dashboard-container">
     <main class="main-content">
       <header class="header">
-        <h1><span>BioLab</span>Laboratoristas</h1>
+        <h1><span>BioLab</span> Laboratoristas</h1>
       </header>
 
       <!-- Barra de búsqueda -->
@@ -36,17 +36,17 @@
               
               <!-- MODO EDICIÓN -->
               <template v-if="laboratoristaEditando?.codigo_interno === l.codigo_interno">
-                <td>{{ l.id }}</td>
-                <td>{{ l.codigo_interno }}</td>
-                <td><input v-model="laboratoristaEditando.nombre" /></td>
-                <td>
+                <td data-label="ID">{{ l.id }}</td>
+                <td data-label="Código Interno">{{ l.codigo_interno }}</td>
+                <td data-label="Nombre"><input v-model="laboratoristaEditando.nombre" /></td>
+                <td data-label="Título Profesional">
                   <select v-model="laboratoristaEditando.titulo">
                     <option value="Bacteriólogo/a">Bacteriólogo/a</option>
                     <option value="Microbiólogo/a">Microbiólogo/a</option>
                     <option value="Biólogo/a">Biólogo/a</option>
                   </select>
                 </td>
-                <td><input v-model="laboratoristaEditando.telefono" /></td>
+                <td data-label="Teléfono"><input v-model="laboratoristaEditando.telefono" /></td>
                 <td>
                   <button class="btn btn-green" @click="guardarEdicion" :disabled="!formularioEdicionCompleto">Guardar</button>
                   <button class="btn btn-delete" @click="cancelarEdicion">Cancelar</button>
@@ -55,11 +55,11 @@
 
               <!-- MODO VISTA -->
               <template v-else>
-                <td>{{ l.id }}</td>
-                <td>{{ l.codigo_interno }}</td>
-                <td>{{ l.nombre }}</td>
-                <td>{{ l.titulo }}</td>
-                <td>{{ l.telefono }}</td>
+                <td data-label="ID">{{ l.id }}</td>
+                <td data-label="Código Interno">{{ l.codigo_interno }}</td>
+                <td data-label="Nombre">{{ l.nombre }}</td>
+                <td data-label="Título Profesional">{{ l.titulo }}</td>
+                <td data-label="Teléfono">{{ l.telefono }}</td>
                 <td>
                   <button class="btn btn-edit" @click="editarLaboratorista(l)">Editar</button>
                   <button class="btn btn-delete" @click="mostrarConfirmacionModal(l.codigo_interno)">Eliminar</button>
@@ -71,7 +71,7 @@
         </table>
       </div>
 
-      <div v-if="laboratoristasFiltrados.length === 0" class="no-data">
+      <div v-if="laboratoristasFiltrados.length === 0 && !cargando" class="no-data">
         No se encontraron registros.
       </div>
 
@@ -152,11 +152,13 @@ const mostrarNotificacion = (msg, error=false) => {
 }
 
 // Validaciones
+// Requerido: Código Interno, Nombre, Título
 const formularioNuevoCompleto = computed(() => {
   const l = nuevoLaboratorista.value
   return l.codigo_interno && l.nombre && l.titulo
 })
 
+// Requerido: Nombre, Título (el código interno no se edita)
 const formularioEdicionCompleto = computed(() => {
   const l = laboratoristaEditando.value
   return l && l.nombre && l.titulo
@@ -166,8 +168,10 @@ const formularioEdicionCompleto = computed(() => {
 const cargarLaboratoristas = async () => {
   try {
     const res = await axios.get(API_URL)
-    laboratoristas.value = res.data.laboratoristas || []  // ✅ Aquí estaba el error
+    // Asegurarse de que se accede correctamente a la lista (asumiendo que devuelve {laboratoristas: []})
+    laboratoristas.value = res.data.laboratoristas || [] 
   } catch (err) {
+    console.error("Error al cargar laboratoristas:", err)
     mostrarNotificacion("Error al cargar datos", true)
   } finally {
     cargando.value = false
@@ -187,13 +191,19 @@ const laboratoristasFiltrados = computed(() => {
 
 // Crear
 const crearLaboratorista = async () => {
+  if (!formularioNuevoCompleto.value) {
+    mostrarNotificacion('Completa los campos obligatorios (Código Interno, Nombre, Título).', true)
+    return
+  }
   try {
     await axios.post(API_URL, nuevoLaboratorista.value)
     mostrarNotificacion("Laboratorista registrado")
     Object.keys(nuevoLaboratorista.value).forEach(k => nuevoLaboratorista.value[k]='')
     cargarLaboratoristas()
   } catch(err) {
-    mostrarNotificacion("Error al registrar", true)
+    const msg = err.response?.data?.Message || "Error desconocido al registrar"
+    console.error("Error al crear:", err)
+    mostrarNotificacion(`Error al registrar: ${msg}`, true)
   }
 }
 
@@ -201,14 +211,30 @@ const crearLaboratorista = async () => {
 const editarLaboratorista = (l) => laboratoristaEditando.value = { ...l }
 
 const guardarEdicion = async () => {
+  if (!formularioEdicionCompleto.value) {
+    mostrarNotificacion('Completa los campos obligatorios (Nombre, Título).', true)
+    return
+  }
   try {
     const codigo = laboratoristaEditando.value.codigo_interno
-    await axios.put(`${API_URL}${codigo}/`, laboratoristaEditando.value)
+    
+    // Solo enviamos los campos que se pueden modificar
+    const payload = {
+      nombre: laboratoristaEditando.value.nombre,
+      titulo: laboratoristaEditando.value.titulo,
+      telefono: laboratoristaEditando.value.telefono || ""
+    }
+
+    // Usamos codigo_interno en la URL, que el backend ahora está listo para recibir
+    await axios.put(`${API_URL}${codigo}/`, payload)
+    
     laboratoristaEditando.value = null
     mostrarNotificacion("Actualizado correctamente")
     cargarLaboratoristas()
   } catch(err) {
-    mostrarNotificacion("Error al actualizar", true)
+    const msg = err.response?.data?.Message || "Error desconocido al actualizar"
+    console.error("Error al actualizar:", err)
+    mostrarNotificacion(`Error al actualizar: ${msg}`, true)
   }
 }
 
@@ -223,11 +249,14 @@ const mostrarConfirmacionModal = (codigo) => {
 const eliminarLaboratoristaConfirmado = async () => {
   mostrarConfirmacion.value = false
   try {
+    // Usamos codigo_interno en la URL
     await axios.delete(`${API_URL}${codigoAEliminar.value}/`)
     mostrarNotificacion("Eliminado correctamente")
     cargarLaboratoristas()
   } catch(err) {
-    mostrarNotificacion("Error al eliminar", true)
+    const msg = err.response?.data?.Message || "Error desconocido al eliminar"
+    console.error("Error al eliminar:", err)
+    mostrarNotificacion(`Error al eliminar: ${msg}`, true)
   }
 }
 
@@ -305,7 +334,7 @@ tr:hover:not(:has(.btn-green)) {
 }
 
 /* Campos de entrada para Edición de Tabla */
-td input {
+td input, td select {
   width: 100%;
   padding: 5px;
   border: 1px solid #060505;
@@ -363,12 +392,11 @@ td input {
   align-items: center;
   color: #000;
 }
-.form-inline input {
-  /* Nueva configuración para forzar la horizontalidad en desktop/tablet */
-  /* 6 inputs, 1/6th width each, adjusted for 10px gap */
-  flex: 1 1 calc(16.66% - 10px); 
+.form-inline input, .form-inline select {
+  /* 4 inputs + 1 button. 1/4th width each, adjusted for gap */
+  flex: 1 1 calc(25% - 10px); 
   min-width: 100px;
-  padding: 8px 10px; /* Ajuste de padding para que se vea bien */
+  padding: 8px 10px;
   border: 1px solid #0f0e0e;
   border-radius: 4px;
   box-sizing: border-box;
@@ -489,15 +517,13 @@ td input {
     text-align: left;
     color: #34495e;
   }
-  /* Labels for mobile view */
+  /* Labels for mobile view (Must match data-label attribute in HTML) */
   td:nth-of-type(1):before { content: "ID"; }
-  td:nth-of-type(2):before { content: "Documento"; }
+  td:nth-of-type(2):before { content: "Código Interno"; }
   td:nth-of-type(3):before { content: "Nombre"; }
-  td:nth-of-type(4):before { content: "Apellido"; }
-  td:nth-of-type(5):before { content: "Cod. Ingreso"; }
-  td:nth-of-type(6):before { content: "Dirección"; }
-  td:nth-of-type(7):before { content: "Teléfono"; }
-  td:nth-of-type(8) { text-align: center; } /* Actions */
+  td:nth-of-type(4):before { content: "Título Profesional"; }
+  td:nth-of-type(5):before { content: "Teléfono"; }
+  td:nth-of-type(6) { text-align: center; } /* Actions */
   
   .toast-notification {
     left: 10px;
@@ -507,4 +533,3 @@ td input {
   }
 }
 </style>
-
