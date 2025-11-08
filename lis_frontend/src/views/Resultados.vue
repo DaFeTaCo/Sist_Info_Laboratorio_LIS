@@ -40,10 +40,10 @@
                 <td>{{ r.id }}</td>
                 <td>{{ r.codigo_ingreso }}</td>
                 <td>{{ obtenerNombrePaciente(r.codigo_ingreso) }}</td>
-                <td><input type="number" step="0.1" min="0.1" v-model="resultadoEditando.colesterol_total" /></td>
-                <td><input type="number" step="0.1" min="0.1" v-model="resultadoEditando.colesterol_hdl" /></td>
-                <td><input type="number" step="0.1" min="0.1" v-model="resultadoEditando.colesterol_ldl" /></td>
-                <td><input type="number" step="0.1" min="0.1" v-model="resultadoEditando.trigliceridos" /></td>
+                <td><input type="number" step="0.1" min="10" v-model="resultadoEditando.colesterol_total" /></td>
+                <td><input type="number" step="0.1" min="10" v-model="resultadoEditando.colesterol_hdl" /></td>
+                <td><input type="number" step="0.1" min="10" v-model="resultadoEditando.colesterol_ldl" /></td>
+                <td><input type="number" step="0.1" min="10" v-model="resultadoEditando.trigliceridos" /></td>
                 <td>
                   <select v-model="resultadoEditando.laboratorista" required>
                     <option disabled value="">Seleccione laboratorista</option>
@@ -91,10 +91,10 @@
             </option>
           </select>
 
-          <input type="number" step="0.1" min="0.1" v-model="nuevoResultado.colesterol_total" placeholder="Colesterol total" required />
-          <input type="number" step="0.1" min="0.1" v-model="nuevoResultado.colesterol_hdl" placeholder="Colesterol HDL" required />
-          <input type="number" step="0.1" min="0.1" v-model="nuevoResultado.colesterol_ldl" placeholder="Colesterol LDL" required />
-          <input type="number" step="0.1" min="0.1" v-model="nuevoResultado.trigliceridos" placeholder="Triglicéridos" required />
+          <input type="number" step="0.1" min="10" v-model="nuevoResultado.colesterol_total" placeholder="Colesterol total" required />
+          <input type="number" step="0.1" min="10" v-model="nuevoResultado.colesterol_hdl" placeholder="Colesterol HDL" required />
+          <input type="number" step="0.1" min="10" v-model="nuevoResultado.colesterol_ldl" placeholder="Colesterol LDL" required />
+          <input type="number" step="0.1" min="10" v-model="nuevoResultado.trigliceridos" placeholder="Triglicéridos" required />
 
           <select v-model="nuevoResultado.laboratorista" required>
             <option disabled value="">Seleccione laboratorista</option>
@@ -535,4 +535,5 @@ td input {
   opacity: 0;
 }
 </style>
+
 
