@@ -40,11 +40,18 @@
                 <td>{{ r.id }}</td>
                 <td>{{ r.codigo_ingreso }}</td>
                 <td>{{ obtenerNombrePaciente(r.codigo_ingreso) }}</td>
-                <td><input type="number" v-model="resultadoEditando.colesterol_total" /></td>
-                <td><input type="number" v-model="resultadoEditando.colesterol_hdl" /></td>
-                <td><input type="number" v-model="resultadoEditando.colesterol_ldl" /></td>
-                <td><input type="number" v-model="resultadoEditando.trigliceridos" /></td>
-                <td><input v-model="resultadoEditando.laboratorista" /></td>
+                <td><input type="number" step="0.1" min="0.1" v-model="resultadoEditando.colesterol_total" /></td>
+                <td><input type="number" step="0.1" min="0.1" v-model="resultadoEditando.colesterol_hdl" /></td>
+                <td><input type="number" step="0.1" min="0.1" v-model="resultadoEditando.colesterol_ldl" /></td>
+                <td><input type="number" step="0.1" min="0.1" v-model="resultadoEditando.trigliceridos" /></td>
+                <td>
+                  <select v-model="resultadoEditando.laboratorista" required>
+                    <option disabled value="">Seleccione laboratorista</option>
+                    <option v-for="l in laboratoristas" :key="l.id" :value="l.codigo_interno">
+                      {{ l.codigo_interno }} - {{ l.nombre }}
+                    </option>
+                  </select>
+                </td>
                 <td>
                   <button class="btn btn-green" @click="guardarEdicion" :disabled="!formularioEdicionCompleto">Guardar</button>
                   <button class="btn btn-delete" @click="cancelarEdicion">Cancelar</button>
@@ -84,11 +91,17 @@
             </option>
           </select>
 
-          <input type="number" v-model="nuevoResultado.colesterol_total" placeholder="Colesterol total" required />
-          <input type="number" v-model="nuevoResultado.colesterol_hdl" placeholder="Colesterol HDL" required />
-          <input type="number" v-model="nuevoResultado.colesterol_ldl" placeholder="Colesterol LDL" required />
-          <input type="number" v-model="nuevoResultado.trigliceridos" placeholder="Triglicéridos" required />
-          <input v-model="nuevoResultado.laboratorista" placeholder="Código laboratorista" required />
+          <input type="number" step="0.1" min="0.1" v-model="nuevoResultado.colesterol_total" placeholder="Colesterol total" required />
+          <input type="number" step="0.1" min="0.1" v-model="nuevoResultado.colesterol_hdl" placeholder="Colesterol HDL" required />
+          <input type="number" step="0.1" min="0.1" v-model="nuevoResultado.colesterol_ldl" placeholder="Colesterol LDL" required />
+          <input type="number" step="0.1" min="0.1" v-model="nuevoResultado.trigliceridos" placeholder="Triglicéridos" required />
+
+          <select v-model="nuevoResultado.laboratorista" required>
+            <option disabled value="">Seleccione laboratorista</option>
+            <option v-for="l in laboratoristas" :key="l.id" :value="l.codigo_interno">
+              {{ l.codigo_interno }} - {{ l.nombre }}
+            </option>
+          </select>
 
           <button class="btn btn-green" type="submit" :disabled="!formularioNuevoCompleto">Agregar</button>
         </form>
@@ -124,10 +137,11 @@ import axios from 'axios'
 const BASE_URL = 'http://127.0.0.1:8000/api'
 const RESULTADOS_API_URL = `${BASE_URL}/resultados`
 const PACIENTES_API_URL = `${BASE_URL}/pacientes`
-
+const LABORATORISTAS_API_URL = `${BASE_URL}/laboratoristas`
 
 const resultados = ref([])
 const pacientes = ref([])
+const laboratoristas = ref([])
 const busqueda = ref('')
 const cargando = ref(true)
 const resultadoEditando = ref(null)
@@ -163,12 +177,12 @@ const mostrarNotificacion = (mensaje, error = false) => {
 // 🔹 Validación de formularios
 const formularioNuevoCompleto = computed(() => {
   const r = nuevoResultado.value
-  return r.codigo_ingreso && r.colesterol_total && r.colesterol_hdl && r.colesterol_ldl && r.colesterol_ldl && r.trigliceridos && r.laboratorista
+  return r.codigo_ingreso && r.colesterol_total > 0 && r.colesterol_hdl > 0 && r.colesterol_ldl > 0 && r.trigliceridos > 0 && r.laboratorista
 })
 
 const formularioEdicionCompleto = computed(() => {
   const r = resultadoEditando.value
-  return r && r.colesterol_total && r.colesterol_hdl && r.colesterol_ldl && r.trigliceridos && r.laboratorista
+  return r && r.colesterol_total > 0 && r.colesterol_hdl > 0 && r.colesterol_ldl > 0 && r.trigliceridos > 0 && r.laboratorista
 })
 
 // 🔹 Cargar datos
@@ -194,6 +208,15 @@ const cargarPacientes = async () => {
     pacientes.value = response.data.pacientes || response.data
   } catch (error) {
     console.error('Error al cargar pacientes:', error)
+  }
+}
+
+const cargarLaboratoristas = async () => {
+  try {
+    const response = await axios.get(LABORATORISTAS_API_URL + '/')
+    laboratoristas.value = response.data.laboratoristas || response.data
+  } catch (error) {
+    console.error('Error al cargar laboratoristas:', error)
   }
 }
 
@@ -297,6 +320,7 @@ const eliminarResultadoConfirmado = async () => {
 onMounted(() => {
   cargarResultados()
   cargarPacientes()
+  cargarLaboratoristas()
 })
 </script>
 
@@ -511,3 +535,4 @@ td input {
   opacity: 0;
 }
 </style>
+
