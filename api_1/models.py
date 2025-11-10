@@ -1,0 +1,51 @@
+from django.db import models
+
+class Laboratoristas(models.Model):
+    nombre = models.CharField(max_length=50)
+    codigo_interno = models.CharField(max_length=100, unique=True) 
+    titulo = models.CharField(max_length=150)
+    telefono = models.CharField(max_length=150)
+    
+    def __str__(self):
+        return f"{self.codigo_interno} - {self.nombre}"
+
+
+class Paciente(models.Model):
+    documento = models.CharField(max_length=50, unique=True)
+    nombre = models.CharField(max_length=100)
+    apellido = models.CharField(max_length=100)
+    codigo_ingreso = models.CharField(max_length=150, null=True, blank=True, editable=False, unique=True)
+    direccion = models.CharField(max_length=150, null=True, blank=True)
+    telefono = models.CharField(max_length=50, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.pk:  
+            last = Paciente.objects.order_by('-id').first()
+            next_id = last.id + 1 if last else 1
+            inicial_nombre = self.nombre[0].upper()
+            inicial_apellido = self.apellido[0].upper()
+
+            # XX0001
+            self.codigo_ingreso = f"{inicial_nombre}{inicial_apellido}{next_id:04d}"
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.nombre} {self.apellido} - {self.codigo_ingreso}"
+
+
+
+
+class Resultado(models.Model):
+
+    codigo_ingreso = models.CharField(max_length=10) 
+
+    # Los campos de colesterol y triglicéridos tienen valores con unidades (ej. "180 mg/dL").
+
+    colesterol_total = models.CharField(max_length=20)
+    colesterol_hdl = models.CharField(max_length=20)
+    colesterol_ldl = models.CharField(max_length=20)
+    trigliceridos = models.CharField(max_length=20)
+    
+    # laboratorista: Código del laboratorista, también como CharField.
+    laboratorista = models.CharField(max_length=10) # Basado en los ejemplos 'LAB001'
